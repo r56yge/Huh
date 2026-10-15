@@ -21,3 +21,8 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.production]
+GOOGLE_REDIRECT_URI = "https://hi-repo-credentials-and-google-connect--rapigye.replit.app/api/auth/google/callback"
