@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   Activity, AlertCircle, ArrowRight, Bell, CalendarDays, Check, CheckCircle2,
-  CircleHelp, CloudUpload, FileSpreadsheet, Filter, Gauge, LoaderCircle,
+  CircleHelp, CloudUpload, Download, FileSpreadsheet, Filter, Gauge, LoaderCircle,
   LogOut, Menu, Pause, Play, Plus, RefreshCw, Search, Settings2, ShieldCheck,
   Video, X, CalendarCheck2, Clock3, Trash2, Globe2,
 } from 'lucide-react';
@@ -329,6 +329,20 @@ function ActivityPage() {
   </div>;
 }
 
+const IMPORT_TEMPLATE_CSV = 'title,startAt,endAt,description,guestEmails\r\n';
+
+function downloadImportTemplate() {
+  const blob = new Blob([IMPORT_TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'smart-calendar-import-template.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 type CsvData = { headers:string[]; rows:string[][] };
 function parseCsv(text:string):CsvData {
   const lines:string[][]=[]; let row:string[]=[]; let field=''; let quoted=false;
@@ -401,7 +415,8 @@ function ImportsPage() {
     <div className="mb-6 grid gap-3 sm:grid-cols-3">{[['01','Upload & map','Choose the columns'],['02','Preview','Check validation'],['03','Confirm','Execute only when ready']].map(([n,t,d],i)=><div key={n} className={`flex items-center gap-3 rounded-xl border p-3 ${i===0?'border-[#bfd4c4] bg-[#edf4eb]':'border-[#e7e3d9] bg-[#fbfaf5]'}`}><span className="font-mono-ui text-lg text-[#58836b]">{n}</span><div><div className="text-xs font-bold text-[#45564e]">{t}</div><div className="text-[10px] text-[#858d87]">{d}</div></div></div>)}</div>
     <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
       <div className="space-y-5">
-        <section className="surface p-5 md:p-6"><div className="mb-4 flex items-center gap-3"><span className="rounded-xl bg-[#edf2e8] p-2.5 text-[#4e8064]"><CloudUpload size={19}/></span><div><h2 className="font-display text-xl font-semibold">Upload your event file</h2><p className="text-xs text-[#828b86]">CSV with a header row · up to 500 events</p></div></div>
+        <section className="surface p-5 md:p-6"><div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><span className="rounded-xl bg-[#edf2e8] p-2.5 text-[#4e8064]"><CloudUpload size={19}/></span><div><h2 className="font-display text-xl font-semibold">Upload your event file</h2><p className="text-xs text-[#828b86]">CSV with a header row · up to 500 events</p></div></div><Button kind="secondary" onClick={downloadImportTemplate} testId="button-download-csv-template"><Download size={15}/>Download CSV template</Button></div>
+          <p className="mb-3 text-[11px] leading-5 text-[#828b86]">The template has headers only. Add one event per row; title, startAt, and endAt are required.</p>
           <label className="flex min-h-[132px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#bfc9bc] bg-[#f7f7f0] px-4 text-center transition hover:border-[#6e9c7e] hover:bg-[#f0f4eb]"><FileSpreadsheet className="mb-2 text-[#58846b]" size={23}/><span className="text-sm font-semibold text-[#425449]">{fileName||'Choose a CSV or Excel file'}</span><span className="mt-1 text-[11px] text-[#859089]">CSV or .xlsx · first worksheet · up to 500 events</span><input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" className="sr-only" onChange={e=>onFile(e.target.files?.[0])} data-testid="input-import-file"/></label>
           {localError&&<div className="mt-3 flex gap-2 rounded-lg bg-[#fbefeb] p-3 text-xs leading-5 text-[#a84b3e]" role="alert"><AlertCircle className="mt-0.5 shrink-0" size={14}/>{localError}</div>}
         </section>
