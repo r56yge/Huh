@@ -1,4 +1,5 @@
 import app from "./app";
+import { startJobRunner } from "./lib/job-runner";
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"];
@@ -22,4 +23,5 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  startJobRunner();
 });

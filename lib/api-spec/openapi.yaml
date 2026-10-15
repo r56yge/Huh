@@ -3,13 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Smart Calendar Automation API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Google account session
+  - name: dashboard
+    description: Calendar overview
+  - name: events
+    description: Calendar event management
+  - name: reminders
+    description: Reminder management
+  - name: jobs
+    description: Background automation jobs
+  - name: imports
+    description: Bulk event imports
 paths:
   /healthz:
     get:
@@ -24,6 +36,290 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/session:
+    get:
+      operationId: getGoogleSession
+      tags: [auth]
+      summary: Get the current Google account connection
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleSession"
+  /auth/logout:
+    post:
+      operationId: logoutGoogle
+      tags: [auth]
+      summary: Disconnect the Google account and end the session
+      responses:
+        "204":
+          description: Session ended
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard events, reminders, and activity
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /calendars:
+    get:
+      operationId: listCalendars
+      tags: [events]
+      summary: List the connected account's calendars
+      responses:
+        "200":
+          description: Available Google calendars
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Calendar"
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: Search calendar events
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Matching events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarEvent"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create a Google Calendar event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+  /events/{eventId}:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a calendar event
+      responses:
+        "200":
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+    patch:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event or pause its automation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdate"
+      responses:
+        "200":
+          description: Event updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Cancel an event
+      responses:
+        "204":
+          description: Event cancelled
+  /reminders:
+    get:
+      operationId: listReminders
+      tags: [reminders]
+      summary: List scheduled reminders
+      responses:
+        "200":
+          description: Reminder list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+  /reminders/{reminderId}:
+    patch:
+      operationId: updateReminder
+      tags: [reminders]
+      summary: Enable or disable a scheduled reminder
+      parameters:
+        - name: reminderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReminderUpdate"
+      responses:
+        "200":
+          description: Reminder updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List background automation jobs
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [queued, running, failed, completed]
+      responses:
+        "200":
+          description: Automation job history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AutomationJob"
+  /jobs/{jobId}/retry:
+    post:
+      operationId: retryJob
+      tags: [jobs]
+      summary: Retry a failed automation job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: Job queued for retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationJob"
+  /activity:
+    get:
+      operationId: listActivity
+      tags: [dashboard]
+      summary: List recent automation activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEntry"
+  /imports:
+    get:
+      operationId: listImports
+      tags: [imports]
+      summary: List recent bulk imports
+      responses:
+        "200":
+          description: Import history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImportBatch"
+  /imports/preview:
+    post:
+      operationId: previewImport
+      tags: [imports]
+      summary: Validate normalized event rows before import
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportPreviewInput"
+      responses:
+        "200":
+          description: Preview with validation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportPreview"
+  /imports/{batchId}/execute:
+    post:
+      operationId: executeImport
+      tags: [imports]
+      summary: Create events after explicit user confirmation
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportConfirm"
+      responses:
+        "200":
+          description: Bulk operation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +329,234 @@ components:
           type: string
       required:
         - status
+    GoogleSession:
+      type: object
+      required: [connected, email, displayName]
+      properties:
+        connected:
+          type: boolean
+        email:
+          type: ["string", "null"]
+        displayName:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+    Calendar:
+      type: object
+      required: [id, name, primary, timeZone]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        primary: { type: boolean }
+        timeZone: { type: string }
+    ReminderInput:
+      type: object
+      required: [enabled, amount, unit, localTime, method]
+      properties:
+        enabled: { type: boolean }
+        amount: { type: integer, minimum: 0 }
+        unit: { type: string, enum: [minutes, hours, days, weeks] }
+        localTime: { type: string, description: "HH:mm in the event time zone" }
+        method: { type: string, enum: [email, popup] }
+    EventInput:
+      type: object
+      required: [title, startAt, endAt, allDay, timeZone, guestEmails, calendarId, repeat, createMeet, reminders]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        allDay: { type: boolean }
+        timeZone: { type: string }
+        description: { type: string, maxLength: 8000 }
+        guestEmails:
+          type: array
+          items: { type: string, format: email }
+        calendarId: { type: string }
+        repeat: { type: string, enum: [none, daily, weekly, monthly, yearly] }
+        createMeet: { type: boolean }
+        reminders:
+          type: array
+          items: { $ref: "#/components/schemas/ReminderInput" }
+    EventUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        allDay: { type: boolean }
+        timeZone: { type: string }
+        description: { type: string, maxLength: 8000 }
+        guestEmails:
+          type: array
+          items: { type: string, format: email }
+        calendarId: { type: string }
+        repeat: { type: string, enum: [none, daily, weekly, monthly, yearly] }
+        createMeet: { type: boolean }
+        automationPaused: { type: boolean }
+        reminders:
+          type: array
+          items: { $ref: "#/components/schemas/ReminderInput" }
+    CalendarEvent:
+      type: object
+      required: [id, googleEventId, title, startAt, endAt, allDay, timeZone, guestEmails, calendarId, repeat, automationPaused, meetUrl, reminders]
+      properties:
+        id: { type: string }
+        googleEventId: { type: string }
+        title: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        allDay: { type: boolean }
+        timeZone: { type: string }
+        description: { type: ["string", "null"] }
+        guestEmails:
+          type: array
+          items: { type: string, format: email }
+        calendarId: { type: string }
+        repeat: { type: string, enum: [none, daily, weekly, monthly, yearly] }
+        automationPaused: { type: boolean }
+        meetUrl: { type: ["string", "null"] }
+        reminders:
+          type: array
+          items: { $ref: "#/components/schemas/Reminder" }
+    Reminder:
+      type: object
+      required: [id, eventId, eventTitle, scheduledAt, method, status, enabled, attempts]
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        eventTitle: { type: string }
+        scheduledAt: { type: string, format: date-time }
+        method: { type: string, enum: [email, popup] }
+        status: { type: string, enum: [scheduled, delivered, failed, skipped] }
+        enabled: { type: boolean }
+        attempts: { type: integer }
+        lastError: { type: ["string", "null"] }
+    ReminderUpdate:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    AutomationJob:
+      type: object
+      required: [id, kind, status, createdAt, attempts]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        status: { type: string, enum: [queued, running, failed, completed] }
+        eventId: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        attempts: { type: integer }
+        error: { type: ["string", "null"] }
+    ActivityEntry:
+      type: object
+      required: [id, kind, message, createdAt, status]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [event_created, event_updated, event_cancelled, reminder_scheduled, reminder_sent, import_completed, job_failed, google_connected] }
+        message: { type: string }
+        createdAt: { type: string, format: date-time }
+        status: { type: string, enum: [success, warning, failed] }
+    Dashboard:
+      type: object
+      required: [upcomingEvents, scheduledReminders, recentActivity, upcomingCount, reminderCount, failedJobCount]
+      properties:
+        upcomingEvents:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarEvent" }
+        scheduledReminders:
+          type: array
+          items: { $ref: "#/components/schemas/Reminder" }
+        recentActivity:
+          type: array
+          items: { $ref: "#/components/schemas/ActivityEntry" }
+        upcomingCount: { type: integer }
+        reminderCount: { type: integer }
+        failedJobCount: { type: integer }
+    ImportEventRow:
+      type: object
+      required: [rowNumber, idempotencyKey, title, startAt, endAt, allDay, timeZone, guestEmails, calendarId, repeat, createMeet, reminders]
+      properties:
+        rowNumber: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, minLength: 1 }
+        title: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        allDay: { type: boolean }
+        timeZone: { type: string }
+        description: { type: string }
+        guestEmails:
+          type: array
+          items: { type: string, format: email }
+        calendarId: { type: string }
+        repeat: { type: string, enum: [none, daily, weekly, monthly, yearly] }
+        createMeet: { type: boolean }
+        reminders:
+          type: array
+          items: { $ref: "#/components/schemas/ReminderInput" }
+    ImportPreviewInput:
+      type: object
+      required: [rows]
+      properties:
+        rows:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { $ref: "#/components/schemas/ImportEventRow" }
+    ImportPreviewRow:
+      type: object
+      required: [rowNumber, valid, errors, title, startAt]
+      properties:
+        rowNumber: { type: integer }
+        valid: { type: boolean }
+        errors:
+          type: array
+          items: { type: string }
+        title: { type: string }
+        startAt: { type: string }
+    ImportPreview:
+      type: object
+      required: [batchId, totalRows, validRows, invalidRows, rows]
+      properties:
+        batchId: { type: string }
+        totalRows: { type: integer }
+        validRows: { type: integer }
+        invalidRows: { type: integer }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ImportPreviewRow" }
+    ImportConfirm:
+      type: object
+      required: [confirmed]
+      properties:
+        confirmed: { type: boolean, enum: [true] }
+    ImportBatch:
+      type: object
+      required: [id, createdAt, status, totalRows, successfulRows, failedRows, skippedRows]
+      properties:
+        id: { type: string }
+        createdAt: { type: string, format: date-time }
+        status: { type: string, enum: [previewed, completed, partial, failed] }
+        totalRows: { type: integer }
+        successfulRows: { type: integer }
+        failedRows: { type: integer }
+        skippedRows: { type: integer }
+    ImportResultRow:
+      type: object
+      required: [rowNumber, status]
+      properties:
+        rowNumber: { type: integer }
+        status: { type: string, enum: [success, failed, skipped] }
+        eventId: { type: ["string", "null"] }
+        error: { type: ["string", "null"] }
+    ImportResult:
+      type: object
+      required: [batchId, successfulRows, failedRows, skippedRows, rows]
+      properties:
+        batchId: { type: string }
+        successfulRows: { type: integer }
+        failedRows: { type: integer }
+        skippedRows: { type: integer }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ImportResultRow" }
 

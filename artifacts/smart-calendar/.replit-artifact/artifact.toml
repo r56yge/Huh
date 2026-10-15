@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Smart Calendar Automation"
+description = "A responsive calendar operations dashboard for connecting Google Calendar, creating events and Meet links, scheduling reminders, and reviewing bulk imports."
+version = "1.0.0"
+id = "artifacts/smart-calendar"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23762
+
+[services.development]
+run = "pnpm --filter @workspace/smart-calendar run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/smart-calendar", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/smart-calendar/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23762"
+BASE_PATH = "/"
