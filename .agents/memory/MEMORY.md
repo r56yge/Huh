@@ -1,0 +1,1 @@
+- [OAuth deployment callback alignment](oauth-deployment-callback-alignment.md) — preview and published URLs need separate OAuth callbacks; production environment changes require republishing.
